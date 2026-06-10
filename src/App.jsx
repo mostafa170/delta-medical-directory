@@ -5,6 +5,7 @@ import Filters from './components/Filters'
 import DataTable from './components/DataTable'
 import RowModal from './components/RowModal'
 import NearbyModal from './components/NearbyModal'
+import ContactSection from './components/ContactSection'
 
 // Preferred display order for known columns
 const COLUMN_ORDER = [
@@ -289,6 +290,9 @@ export default function App() {
             ))}
           </div>
         )}
+
+        {/* Nextcare contact section */}
+        <ContactSection />
 
         {/* Search + filters */}
         <Filters
