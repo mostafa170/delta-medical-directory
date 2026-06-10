@@ -1,14 +1,21 @@
+import MultiSelectDropdown from './MultiSelectDropdown'
+
 export default function Filters({
   search, onSearch,
   filterColumns, filterOptions,
   filters, onFilterChange,
   resultCount, totalCount,
 }) {
-  const hasActive = search.trim() || Object.values(filters).some(Boolean)
+  const hasActive = search.trim() || filterColumns.some(({ key }) => {
+    const val = filters[key]
+    return Array.isArray(val) ? val.length > 0 : Boolean(val)
+  })
 
   const clearAll = () => {
     onSearch('')
-    filterColumns.forEach(({ key }) => onFilterChange(key, ''))
+    filterColumns.forEach(({ key, multiSelect }) =>
+      onFilterChange(key, multiSelect ? [] : '')
+    )
   }
 
   return (
@@ -45,15 +52,30 @@ export default function Filters({
 
       {/* Dropdown filters */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
-        {filterColumns.map(({ key, label }) => {
+        {filterColumns.map(({ key, label, multiSelect }) => {
           const isCityFilter = key === 'المنطقة / المدينة'
           const govSelected  = !!filters['المحافظة']
           const isDisabled   = isCityFilter && !govSelected
 
+          if (multiSelect) {
+            return (
+              <div key={key} className="relative pt-0">
+                <MultiSelectDropdown
+                  label={label}
+                  options={filterOptions[key] || []}
+                  selected={Array.isArray(filters[key]) ? filters[key] : []}
+                  onChange={val => onFilterChange(key, val)}
+                  disabled={isDisabled}
+                  hint={isDisabled ? 'اختر المحافظة أولاً' : undefined}
+                />
+              </div>
+            )
+          }
+
           return (
             <div key={key} className="relative">
               {isCityFilter && !govSelected && (
-                <div className="absolute -top-1.5 right-2 z-10">
+                <div className="absolute -top-1.5 right-2 z-10 pointer-events-none">
                   <span className="text-[10px] bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">
                     اختر المحافظة أولاً
                   </span>
@@ -89,10 +111,7 @@ export default function Filters({
         <div className="flex items-center gap-2 flex-wrap">
           <span className={`
             inline-flex items-center gap-1 text-sm font-bold px-3 py-1 rounded-full
-            ${resultCount === 0
-              ? 'bg-red-50 text-red-500'
-              : 'bg-sky-50 text-sky-600'
-            }
+            ${resultCount === 0 ? 'bg-red-50 text-red-500' : 'bg-sky-50 text-sky-600'}
           `}>
             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
               <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />

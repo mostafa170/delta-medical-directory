@@ -20,12 +20,18 @@ const COLUMN_ORDER = [
 ]
 
 const FILTER_COLUMNS = [
-  { key: 'المحافظة',           label: 'المحافظة',           multiValue: false },
-  { key: 'المنطقة / المدينة', label: 'المنطقة / المدينة', multiValue: false },
-  { key: 'نوع مقدم الخدمة',   label: 'نوع مقدم الخدمة',   multiValue: false },
-  { key: 'الخدمات المقدمة',   label: 'الخدمات المقدمة',   multiValue: true  },
-  { key: 'التخصص',             label: 'التخصص',             multiValue: false },
+  { key: 'المحافظة',           label: 'المحافظة',           multiValue: false, multiSelect: false },
+  { key: 'المنطقة / المدينة', label: 'المنطقة / المدينة', multiValue: false, multiSelect: true  },
+  { key: 'نوع مقدم الخدمة',   label: 'نوع مقدم الخدمة',   multiValue: false, multiSelect: false },
+  { key: 'الخدمات المقدمة',   label: 'الخدمات المقدمة',   multiValue: true,  multiSelect: false },
+  { key: 'التخصص',             label: 'التخصص',             multiValue: false, multiSelect: false },
 ]
+
+// Canonical name for areas that appear under multiple spellings
+const AREA_ALIASES = {
+  'حدائق الاهرام': 'حدائق الأهرام',
+}
+const normalizeArea = (val) => AREA_ALIASES[val] ?? val
 
 export default function App() {
   const [allRows,    setAllRows]    = useState([])
@@ -33,7 +39,7 @@ export default function App() {
   const [sheetNames, setSheetNames] = useState([])
   const [activeSheet,setActiveSheet]= useState('all')
   const [search,     setSearch]     = useState('')
-  const [filters,    setFilters]    = useState({})
+  const [filters,    setFilters]    = useState({ 'المنطقة / المدينة': [] })
   const [selectedRow,setSelectedRow]= useState(null)
   const [showNearby, setShowNearby] = useState(false)
   const [fileName,   setFileName]   = useState('')
@@ -62,9 +68,12 @@ export default function App() {
             Object.entries(row).forEach(([k, v]) => {
               const key = String(k).trim()
               headerSet.add(key)
-              cleaned[key] = v instanceof Date
+              let val = v instanceof Date
                 ? v.toLocaleDateString('ar-EG')
                 : String(v ?? '').trim()
+              // Normalize area aliases (e.g. حدائق الاهرام → حدائق الأهرام)
+              if (key === 'المنطقة / المدينة') val = normalizeArea(val)
+              cleaned[key] = val
             })
             combined.push({ ...cleaned, _sheet: sheetName, _id: `${sheetName}-${idx}` })
           })
@@ -79,7 +88,7 @@ export default function App() {
         setAllRows(combined)
         setActiveSheet('all')
         setSearch('')
-        setFilters({})
+        setFilters({ 'المنطقة / المدينة': [] })
       } catch (err) {
         setError('تعذّر قراءة الملف. تأكد أنه ملف Excel صالح بصيغة .xlsx')
         console.error(err)
@@ -131,9 +140,13 @@ export default function App() {
     let rows = sheetRows
 
     Object.entries(filters).forEach(([key, val]) => {
-      if (!val) return
-      const q = val.toLowerCase()
-      rows = rows.filter(row => String(row[key] ?? '').toLowerCase().includes(q))
+      if (Array.isArray(val)) {
+        if (val.length === 0) return
+        rows = rows.filter(row => val.includes(String(row[key] ?? '').trim()))
+      } else {
+        if (!val) return
+        rows = rows.filter(row => String(row[key] ?? '').toLowerCase().includes(val.toLowerCase()))
+      }
     })
 
     if (search.trim()) {
@@ -149,8 +162,8 @@ export default function App() {
   const handleFilterChange = useCallback((key, val) => {
     setFilters(prev => {
       const next = { ...prev, [key]: val }
-      // Reset city when governorate changes
-      if (key === 'المحافظة') next['المنطقة / المدينة'] = ''
+      // Reset area selection when governorate changes
+      if (key === 'المحافظة') next['المنطقة / المدينة'] = []
       return next
     })
   }, [])
@@ -161,7 +174,7 @@ export default function App() {
     setSheetNames([])
     setActiveSheet('all')
     setSearch('')
-    setFilters({})
+    setFilters({ 'المنطقة / المدينة': [] })
     setFileName('')
     setError('')
   }, [])

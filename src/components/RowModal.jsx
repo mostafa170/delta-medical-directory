@@ -27,6 +27,17 @@ export default function RowModal({ row, headers, onClose }) {
   const name = String(row['مقدم الخدمة'] ?? '').trim() || 'تفاصيل المنشأة'
   const tel  = String(row['Tel. no. - التليفون'] ?? '').trim()
 
+  const mapsUrl = (() => {
+    const parts = [
+      String(row['مقدم الخدمة'] ?? '').replace(/\r\n|\n/g, ' ').trim(),
+      String(row['العنوان'] ?? '').trim(),
+      String(row['المنطقة / المدينة'] ?? '').trim(),
+      String(row['المحافظة'] ?? '').trim(),
+      'مصر',
+    ].filter(Boolean)
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parts.join(', '))}`
+  })()
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4
@@ -110,7 +121,7 @@ export default function RowModal({ row, headers, onClose }) {
 
         {/* Footer */}
         <div className="border-t border-gray-100 px-5 py-3 flex items-center justify-between gap-2 bg-gray-50/50">
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {tel && (
               <a
                 href={`tel:${tel.replace(/\D/g, '')}`}
@@ -124,6 +135,21 @@ export default function RowModal({ row, headers, onClose }) {
                 اتصال
               </a>
             )}
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white
+                text-sm font-medium px-4 py-2 rounded-xl transition-colors shadow-sm"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              فتح في خرائط جوجل
+            </a>
           </div>
           <button
             onClick={onClose}
