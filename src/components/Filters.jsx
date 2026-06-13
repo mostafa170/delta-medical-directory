@@ -50,7 +50,7 @@ export default function Filters({
 
       {/* Dropdown filters */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
-        {filterColumns.map(({ key, label, multiSelect }) => {
+        {filterColumns.map(({ key, label, itemLabel, multiSelect }) => {
           const isCityFilter = key === 'المنطقة / المدينة'
           const govSelected  = !!filters['المحافظة']
           const isDisabled   = isCityFilter && !govSelected
@@ -60,6 +60,7 @@ export default function Filters({
               <div key={key} className="relative pt-0">
                 <MultiSelectDropdown
                   label={label}
+                  itemLabel={itemLabel}
                   options={filterOptions[key] || []}
                   selected={Array.isArray(filters[key]) ? filters[key] : []}
                   onChange={val => onFilterChange(key, val)}

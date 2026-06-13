@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 
 export default function MultiSelectDropdown({
   label,
+  itemLabel = 'عنصر',  // singular noun used in count badge & search placeholder
   options = [],
   selected = [],   // string[]
   onChange,        // (string[]) => void
@@ -48,7 +49,7 @@ export default function MultiSelectDropdown({
 
   const triggerLabel = selected.length === 0
     ? `${label} — الكل`
-    : `${selected.length} منطقة محددة`
+    : `${selected.length} ${itemLabel} محدد`
 
   return (
     <div ref={containerRef} className="relative">
@@ -107,7 +108,7 @@ export default function MultiSelectDropdown({
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="ابحث عن منطقة…"
+                placeholder={`ابحث عن ${itemLabel}…`}
                 className="w-full pr-8 pl-3 py-1.5 text-sm bg-gray-50 rounded-lg border border-gray-200
                   focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-transparent"
               />
@@ -173,7 +174,7 @@ export default function MultiSelectDropdown({
           {selected.length > 0 && (
             <div className="border-t border-gray-100 px-3 py-2 flex items-center justify-between bg-gray-50/50">
               <span className="text-xs text-sky-600 font-medium">
-                {selected.length} منطقة محددة
+                {selected.length} {itemLabel} محدد
               </span>
               <button
                 onClick={() => setOpen(false)}

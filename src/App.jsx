@@ -22,11 +22,11 @@ const COLUMN_ORDER = [
 ]
 
 const FILTER_COLUMNS = [
-  { key: 'المحافظة',           label: 'المحافظة',           multiValue: false, multiSelect: false },
-  { key: 'المنطقة / المدينة', label: 'المنطقة / المدينة', multiValue: false, multiSelect: true  },
-  { key: 'نوع مقدم الخدمة',   label: 'نوع مقدم الخدمة',   multiValue: false, multiSelect: true  },
-  { key: 'الخدمات المقدمة',   label: 'الخدمات المقدمة',   multiValue: true,  multiSelect: true  },
-  { key: 'التخصص',             label: 'التخصص',             multiValue: false, multiSelect: true  },
+  { key: 'المحافظة',           label: 'المحافظة',           itemLabel: 'محافظة',  multiValue: false, multiSelect: false },
+  { key: 'المنطقة / المدينة', label: 'المنطقة / المدينة', itemLabel: 'منطقة',   multiValue: false, multiSelect: true  },
+  { key: 'نوع مقدم الخدمة',   label: 'نوع مقدم الخدمة',   itemLabel: 'نوع',     multiValue: false, multiSelect: true  },
+  { key: 'الخدمات المقدمة',   label: 'الخدمات المقدمة',   itemLabel: 'خدمة',    multiValue: true,  multiSelect: true  },
+  { key: 'التخصص',             label: 'التخصص',             itemLabel: 'تخصص',   multiValue: false, multiSelect: true  },
 ]
 
 const MULTI_SELECT_KEYS = FILTER_COLUMNS.filter(f => f.multiSelect).map(f => f.key)
