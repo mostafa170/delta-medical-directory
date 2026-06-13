@@ -6,6 +6,7 @@ import DataTable from './components/DataTable'
 import RowModal from './components/RowModal'
 import NearbyModal from './components/NearbyModal'
 import ContactSection from './components/ContactSection'
+import { normalizeArea, normalizeSpecialty } from './normalize'
 
 // Preferred display order for known columns
 const COLUMN_ORDER = [
@@ -23,16 +24,13 @@ const COLUMN_ORDER = [
 const FILTER_COLUMNS = [
   { key: 'المحافظة',           label: 'المحافظة',           multiValue: false, multiSelect: false },
   { key: 'المنطقة / المدينة', label: 'المنطقة / المدينة', multiValue: false, multiSelect: true  },
-  { key: 'نوع مقدم الخدمة',   label: 'نوع مقدم الخدمة',   multiValue: false, multiSelect: false },
-  { key: 'الخدمات المقدمة',   label: 'الخدمات المقدمة',   multiValue: true,  multiSelect: false },
-  { key: 'التخصص',             label: 'التخصص',             multiValue: false, multiSelect: false },
+  { key: 'نوع مقدم الخدمة',   label: 'نوع مقدم الخدمة',   multiValue: false, multiSelect: true  },
+  { key: 'الخدمات المقدمة',   label: 'الخدمات المقدمة',   multiValue: true,  multiSelect: true  },
+  { key: 'التخصص',             label: 'التخصص',             multiValue: false, multiSelect: true  },
 ]
 
-// Canonical name for areas that appear under multiple spellings
-const AREA_ALIASES = {
-  'حدائق الاهرام': 'حدائق الأهرام',
-}
-const normalizeArea = (val) => AREA_ALIASES[val] ?? val
+const MULTI_SELECT_KEYS = FILTER_COLUMNS.filter(f => f.multiSelect).map(f => f.key)
+const EMPTY_FILTERS = Object.fromEntries(MULTI_SELECT_KEYS.map(k => [k, []]))
 
 export default function App() {
   const [allRows,    setAllRows]    = useState([])
@@ -40,7 +38,7 @@ export default function App() {
   const [sheetNames, setSheetNames] = useState([])
   const [activeSheet,setActiveSheet]= useState('all')
   const [search,     setSearch]     = useState('')
-  const [filters,    setFilters]    = useState({ 'المنطقة / المدينة': [] })
+  const [filters,    setFilters]    = useState({ ...EMPTY_FILTERS })
   const [selectedRow,setSelectedRow]= useState(null)
   const [showNearby, setShowNearby] = useState(false)
   const [fileName,   setFileName]   = useState('')
@@ -72,8 +70,8 @@ export default function App() {
               let val = v instanceof Date
                 ? v.toLocaleDateString('ar-EG')
                 : String(v ?? '').trim()
-              // Normalize area aliases (e.g. حدائق الاهرام → حدائق الأهرام)
               if (key === 'المنطقة / المدينة') val = normalizeArea(val)
+              if (key === 'التخصص')             val = normalizeSpecialty(val)
               cleaned[key] = val
             })
             combined.push({ ...cleaned, _sheet: sheetName, _id: `${sheetName}-${idx}` })
@@ -89,7 +87,7 @@ export default function App() {
         setAllRows(combined)
         setActiveSheet('all')
         setSearch('')
-        setFilters({ 'المنطقة / المدينة': [] })
+        setFilters({ ...EMPTY_FILTERS })
       } catch (err) {
         setError('تعذّر قراءة الملف. تأكد أنه ملف Excel صالح بصيغة .xlsx')
         console.error(err)
@@ -163,8 +161,8 @@ export default function App() {
   const handleFilterChange = useCallback((key, val) => {
     setFilters(prev => {
       const next = { ...prev, [key]: val }
-      // Reset area selection when governorate changes
-      if (key === 'المحافظة') next['المنطقة / المدينة'] = []
+      // Reset all multi-select fields when governorate changes
+      if (key === 'المحافظة') MULTI_SELECT_KEYS.forEach(k => { next[k] = [] })
       return next
     })
   }, [])
@@ -175,7 +173,7 @@ export default function App() {
     setSheetNames([])
     setActiveSheet('all')
     setSearch('')
-    setFilters({ 'المنطقة / المدينة': [] })
+    setFilters({ ...EMPTY_FILTERS })
     setFileName('')
     setError('')
   }, [])

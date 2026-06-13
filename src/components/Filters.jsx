@@ -13,9 +13,7 @@ export default function Filters({
 
   const clearAll = () => {
     onSearch('')
-    filterColumns.forEach(({ key, multiSelect }) =>
-      onFilterChange(key, multiSelect ? [] : '')
-    )
+    filterColumns.forEach(({ key, multiSelect }) => onFilterChange(key, multiSelect ? [] : ''))
   }
 
   return (
