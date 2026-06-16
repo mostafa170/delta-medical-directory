@@ -7,6 +7,7 @@ import RowModal from './components/RowModal'
 import NearbyModal from './components/NearbyModal'
 import ContactSection from './components/ContactSection'
 import { normalizeArea, normalizeSpecialty } from './normalize'
+import ChatAssistant from './components/ChatAssistant'
 
 // Preferred display order for known columns
 const COLUMN_ORDER = [
@@ -329,6 +330,9 @@ export default function App() {
           onRowClick={(row) => { setSelectedRow(row); setShowNearby(false) }}
         />
       )}
+
+      {/* AI chat assistant */}
+      <ChatAssistant allRows={allRows} />
     </div>
   )
 }
