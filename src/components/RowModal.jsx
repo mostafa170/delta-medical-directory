@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import FavoriteButton from './FavoriteButton'
 
 const FIELD_META = {
   'مقدم الخدمة':              { icon: '🏥', span: 2 },
@@ -66,15 +67,22 @@ export default function RowModal({ row, headers, onClose }) {
                 </span>
               )}
             </div>
-            <button
-              onClick={onClose}
-              className="shrink-0 w-8 h-8 flex items-center justify-center
-                bg-white/20 hover:bg-white/35 rounded-xl text-white transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <FavoriteButton
+                row={row}
+                light
+                className="w-8 h-8 flex items-center justify-center bg-white/20 hover:bg-white/35 rounded-xl transition-colors"
+              />
+              <button
+                onClick={onClose}
+                className="w-8 h-8 flex items-center justify-center
+                  bg-white/20 hover:bg-white/35 rounded-xl text-white transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 

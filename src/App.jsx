@@ -6,8 +6,10 @@ import DataTable from './components/DataTable'
 import RowModal from './components/RowModal'
 import NearbyModal from './components/NearbyModal'
 import ContactSection from './components/ContactSection'
+import FavoritesScreen from './components/FavoritesScreen'
 import { normalizeArea, normalizeSpecialty } from './normalize'
 import ChatAssistant from './components/ChatAssistant'
+import { useFavorites } from './context/FavoritesContext'
 
 // Preferred display order for known columns
 const COLUMN_ORDER = [
@@ -45,6 +47,9 @@ export default function App() {
   const [fileName,   setFileName]   = useState('')
   const [loading,    setLoading]    = useState(false)
   const [error,      setError]      = useState('')
+  const [view,       setView]       = useState('main') // 'main' | 'favorites'
+
+  const { favorites } = useFavorites()
 
   const handleFile = useCallback((file) => {
     setError('')
@@ -177,6 +182,7 @@ export default function App() {
     setFilters({ ...EMPTY_FILTERS })
     setFileName('')
     setError('')
+    setView('main')
   }, [])
 
   // Auto-load the bundled Delta database on first mount
@@ -257,6 +263,33 @@ export default function App() {
               القريبة منك
             </button>
             <button
+              onClick={() => setView(v => v === 'favorites' ? 'main' : 'favorites')}
+              className={`relative flex items-center gap-1.5 text-sm border rounded-lg px-3 py-1.5 transition-colors ${
+                view === 'favorites'
+                  ? 'bg-rose-500 text-white border-rose-500 hover:bg-rose-600'
+                  : 'text-rose-600 hover:text-rose-800 border-rose-200 hover:bg-rose-50'
+              }`}
+            >
+              <svg
+                className="w-4 h-4"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                fill={view === 'favorites' ? 'currentColor' : 'none'}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round"
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+              المفضلة
+              {favorites.length > 0 && (
+                <span className={`absolute -top-1.5 -left-1.5 min-w-[18px] h-[18px] rounded-full text-xs font-bold flex items-center justify-center px-1 ${
+                  view === 'favorites' ? 'bg-white text-rose-500' : 'bg-rose-500 text-white'
+                }`}>
+                  {favorites.length > 99 ? '99+' : favorites.length}
+                </span>
+              )}
+            </button>
+            <button
               onClick={resetAll}
               className="flex items-center gap-1.5 text-sm text-sky-600 hover:text-sky-800 border border-sky-200 rounded-lg px-3 py-1.5 hover:bg-sky-50 transition-colors"
             >
@@ -271,46 +304,84 @@ export default function App() {
       </header>
 
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4">
-        {/* Sheet tabs */}
-        {sheetNames.length > 1 && (
-          <div className="flex gap-2 mb-4 flex-wrap">
-            <SheetTab
-              label={`الكل (${allRows.length.toLocaleString('ar-EG')})`}
-              active={activeSheet === 'all'}
-              onClick={() => setActiveSheet('all')}
+        {view === 'favorites' ? (
+          <>
+            {/* Favorites header bar */}
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-rose-50 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-rose-500 fill-rose-500" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round"
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-gray-800 leading-tight">المفضلة</h2>
+                  <p className="text-xs text-gray-400">
+                    {favorites.length === 0
+                      ? 'لا توجد منشآت محفوظة'
+                      : `${favorites.length.toLocaleString('ar-EG')} منشأة محفوظة`}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setView('main')}
+                className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700
+                  border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                رجوع للقائمة
+              </button>
+            </div>
+
+            <FavoritesScreen onRowClick={setSelectedRow} />
+          </>
+        ) : (
+          <>
+            {/* Sheet tabs */}
+            {sheetNames.length > 1 && (
+              <div className="flex gap-2 mb-4 flex-wrap">
+                <SheetTab
+                  label={`الكل (${allRows.length.toLocaleString('ar-EG')})`}
+                  active={activeSheet === 'all'}
+                  onClick={() => setActiveSheet('all')}
+                />
+                {sheetNames.map(name => (
+                  <SheetTab
+                    key={name}
+                    label={`${name} (${allRows.filter(r => r._sheet === name).length.toLocaleString('ar-EG')})`}
+                    active={activeSheet === name}
+                    onClick={() => setActiveSheet(name)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Nextcare contact section */}
+            <ContactSection />
+
+            {/* Search + filters */}
+            <Filters
+              search={search}
+              onSearch={setSearch}
+              filterColumns={FILTER_COLUMNS}
+              filterOptions={filterOptions}
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              resultCount={filteredRows.length}
+              totalCount={sheetRows.length}
             />
-            {sheetNames.map(name => (
-              <SheetTab
-                key={name}
-                label={`${name} (${allRows.filter(r => r._sheet === name).length.toLocaleString('ar-EG')})`}
-                active={activeSheet === name}
-                onClick={() => setActiveSheet(name)}
-              />
-            ))}
-          </div>
+
+            {/* Data table */}
+            <DataTable
+              rows={filteredRows}
+              headers={headers}
+              onRowClick={setSelectedRow}
+            />
+          </>
         )}
-
-        {/* Nextcare contact section */}
-        <ContactSection />
-
-        {/* Search + filters */}
-        <Filters
-          search={search}
-          onSearch={setSearch}
-          filterColumns={FILTER_COLUMNS}
-          filterOptions={filterOptions}
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          resultCount={filteredRows.length}
-          totalCount={sheetRows.length}
-        />
-
-        {/* Data table */}
-        <DataTable
-          rows={filteredRows}
-          headers={headers}
-          onRowClick={setSelectedRow}
-        />
       </div>
 
       {/* Detail modal */}

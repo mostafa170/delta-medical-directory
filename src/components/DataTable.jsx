@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import FavoriteButton from './FavoriteButton'
 
 const PAGE_SIZE = 50
 
@@ -76,6 +77,7 @@ export default function DataTable({ rows, headers, onRowClick }) {
                   </span>
                 </th>
               ))}
+              <th className="px-3 py-3 w-10 text-gray-400 font-normal text-xs">مفضلة</th>
               <th className="px-3 py-3 w-10 text-gray-400 font-normal text-xs">تفاصيل</th>
             </tr>
           </thead>
@@ -106,6 +108,13 @@ export default function DataTable({ rows, headers, onRowClick }) {
                     </td>
                   ))}
                   <td className="px-3 py-3 text-center">
+                    <FavoriteButton
+                      row={row}
+                      size="sm"
+                      className="p-1 rounded-lg hover:bg-rose-50 mx-auto block"
+                    />
+                  </td>
+                  <td className="px-3 py-3 text-center">
                     <svg
                       className={`w-4 h-4 mx-auto transition-all duration-200 ${
                         isExpanded ? 'text-sky-500 rotate-180' : 'text-gray-300 group-hover:text-sky-400'
@@ -120,7 +129,7 @@ export default function DataTable({ rows, headers, onRowClick }) {
                 // Inline expanded detail row
                 isExpanded && (
                   <tr key={`${id}-detail`} className="bg-sky-50/40">
-                    <td colSpan={visibleHeaders.length + 1} className="px-4 py-4">
+                    <td colSpan={visibleHeaders.length + 2} className="px-4 py-4">
                       <ExpandedDetail row={row} headers={visibleHeaders} />
                     </td>
                   </tr>
