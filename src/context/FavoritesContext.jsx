@@ -1,70 +1,59 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore'
+import { db } from '../firebase'
+import { useAuth } from './AuthContext'
 
 const STORAGE_KEY = 'delta-favorites'
-const API = '/api/favorites'
 const FavoritesContext = createContext(null)
 
-async function apiFetch(path, opts = {}) {
-  const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json' },
-    ...opts,
-  })
-  if (!res.ok) throw new Error(res.statusText)
-  return res.json()
-}
-
 export function FavoritesProvider({ children }) {
+  const { user } = useAuth()
   const [favorites, setFavorites] = useState(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [] }
     catch { return [] }
   })
-  const serverAvailable = useRef(false)
 
-  // Keep localStorage in sync
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites))
-  }, [favorites])
+    if (!user) {
+      try { setFavorites(JSON.parse(localStorage.getItem(STORAGE_KEY)) || []) }
+      catch { setFavorites([]) }
+      return
+    }
 
-  // Load from server on mount and merge with any localStorage-only entries
-  useEffect(() => {
-    apiFetch(API)
-      .then(serverFavs => {
-        serverAvailable.current = true
-        setFavorites(prev => {
-          const serverIds = new Set(serverFavs.map(f => f._id))
-          // Any entry that exists locally but not on server → push it up
-          const localOnly = prev.filter(f => !serverIds.has(f._id))
-          localOnly.forEach(row =>
-            apiFetch(`${API}/${row._id}`, { method: 'POST', body: JSON.stringify(row) }).catch(() => {})
-          )
-          return [...serverFavs, ...localOnly]
-        })
-      })
-      .catch(() => {
-        serverAvailable.current = false
-      })
-  }, [])
-
-  const isFavorite = useCallback((id) => {
-    return favorites.some(f => f._id === id)
-  }, [favorites])
-
-  const toggleFavorite = useCallback((row) => {
-    setFavorites(prev => {
-      const exists = prev.some(f => f._id === row._id)
-      if (exists) {
-        if (serverAvailable.current) {
-          apiFetch(`${API}/${row._id}`, { method: 'DELETE' }).catch(() => {})
-        }
-        return prev.filter(f => f._id !== row._id)
-      } else {
-        if (serverAvailable.current) {
-          apiFetch(`${API}/${row._id}`, { method: 'POST', body: JSON.stringify(row) }).catch(() => {})
-        }
-        return [...prev, row]
-      }
+    // Real-time sync from Firestore
+    const ref = collection(db, 'users', user.uid, 'favorites')
+    const unsub = onSnapshot(ref, (snap) => {
+      const favs = snap.docs.map(d => d.data())
+      setFavorites(favs)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(favs))
     })
-  }, [])
+    return unsub
+  }, [user])
+
+  const isFavorite = useCallback((id) =>
+    favorites.some(f => f._id === id)
+  , [favorites])
+
+  const toggleFavorite = useCallback(async (row) => {
+    const exists = favorites.some(f => f._id === row._id)
+
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'favorites', String(row._id))
+      if (exists) {
+        await deleteDoc(ref)
+      } else {
+        await setDoc(ref, row)
+      }
+    } else {
+      setFavorites(prev => {
+        const next = exists
+          ? prev.filter(f => f._id !== row._id)
+          : [...prev, row]
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+        return next
+      })
+    }
+  }, [favorites, user])
 
   return (
     <FavoritesContext.Provider value={{ favorites, isFavorite, toggleFavorite }}>
